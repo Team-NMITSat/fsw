@@ -5,20 +5,15 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
-#include "Adafruit_BME680.h";
+#include "Adafruit_BME680.h"
 
-// for quectel l89
-#define rxGPS 3
-#define txGPS 2
-SoftwareSerial gpsSerial(rxGPS, txGPS);
 TinyGPSPlus gps;
 
-
-// Bme68x bme;
+// 0x77
 Adafruit_BME680 bme;
 
-// Adafruit BNO
-Adafruit_BNO055 bno = Adafruit_BNO055(55);
+// 0x28
+Adafruit_BNO055 bno = Adafruit_BNO055(0x28);
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
@@ -40,13 +35,17 @@ float x = 0.0, y = 0.0, z = 0.0;
 // related to quectel l89
 float latitude = 0.0, longitude = 0.0;
 
-// deliminator 
+// deliminator
 String del = ",";
 
 
 void setup() {
-  Serial.begin(115200);   // connect serial
-  gpsSerial.begin(9600);  // connect gps sensor
+  Wire.begin();
+  Wire1.begin();
+  
+  Serial.begin(9600);
+  Serial2.begin(115200);  // connect serial
+  Serial3.begin(9600);    // connect gps sensor
 
 
   // configuration related to BME688
@@ -55,6 +54,7 @@ void setup() {
     while (1)
       ;
   }
+  
   bme.setTemperatureOversampling(BME680_OS_8X);
   bme.setHumidityOversampling(BME680_OS_2X);
   bme.setPressureOversampling(BME680_OS_4X);
@@ -108,17 +108,15 @@ void loop() {
 
   // QUECTEL L89 READING STARTS
 
-  while (gpsSerial.available())  // check for gps data
+  while (Serial3.available())  // check for gps data
   {
-    if (gps.encode(gpsSerial.read()))  // encode gps data
+    if (gps.encode(Serial3.read()))  // encode gps data
     {
       latitude = gps.location.lat();
       longitude = gps.location.lng();
     }
   }
 
-  // char output = x + "," + y;
-
-  Serial.println(x + del + y + del + z + del + temp + del + pressure + del + humidity + del + gas + del + altitude + del + latitude + del + longitude);
-  // Serial.println(output)
+  Serial2.println(String(x) + del + String(y) + del + String(z) + del + String(temp) + del + String(pressure) + del + String(humidity) + del + String(gas) + del + String(altitude) + del + String(latitude) + del + String(longitude));
+  // Serial.println(output);
 }
