@@ -33,20 +33,37 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 // Y: 5.0000
 // Z: 106.1250
 
+// 0. Logging time
+// 1. Relative height
+// 2. Is in free fall (0 or 1)
+// 3. Temperature
+// 4. Atmospheric pressure
+// 5. Pitch
+// 6. Roll
+// 7. Yaw
+// 8. Acceleration in X
+// 9. Y-axis acceleration
+// 10. Z-acceleration
+
 // related to bme688 sensor
 float temp = 0.0, pressure = 0.0, humidity = 0.0, gas = 0.0, altitude = 0.0;
 // related to bno055 sensor
-float x = 0.0, y = 0.0, z = 0.0;
+float roll = 0.0, pitch = 0.0, heading = 0.0 , x_acc = 0.0 , y_acc = 0.0 , z_acc = 0.0;
 // related to quectel l89
 float latitude = 0.0, longitude = 0.0;
 
-// deliminator 
+int hour = 0, minute = 0, second = 0, centisecond = 0;
+
+int isFreeFall = 1;
+
+// deliminator
 String del = ",";
 
 
 void setup() {
-  Serial.begin(115200);   // connect serial
+  Serial.begin(9600);     // connect serial
   gpsSerial.begin(9600);  // connect gps sensor
+
 
 
   // configuration related to BME688
@@ -75,16 +92,23 @@ void setup() {
 
 
 void loop() {
-
   // BNO 055 READING STARTS
 
   sensors_event_t event;
   bno.getEvent(&event);
 
   // readings for bno055
-  x = event.orientation.x;
-  y = event.orientation.y;
-  z = event.orientation.z;
+  roll = event.orientation.roll;
+  pitch = event.orientation.pitch;
+  heading = event.orientation.heading;
+
+  imu::Vector<3> li_ac = bno.getVector(Adafruit_BNO055::VECTOR_ACCELEROMETER);
+
+  imu::Vector<3> 
+
+  x_acc = li_ac.x();
+  y_acc = li_ac.y();
+  z_acc = li_ac.z();
 
   // BME 688 READING STARTS
 
@@ -93,7 +117,6 @@ void loop() {
     Serial.println(F("Failed to begin reading :("));
     return;
   }
-
   delay(50);
   if (!bme.endReading()) {
     Serial.println(F("Failed to complete reading :("));
@@ -114,11 +137,17 @@ void loop() {
     {
       latitude = gps.location.lat();
       longitude = gps.location.lng();
+      hour = gps.time.hour();
+      minute = gps.time.minute();
+      second = gps.time.second();
     }
   }
 
-  // char output = x + "," + y;
+// 10559,906.71,1,32.31,90898.00,-4.25,359.94,17.88,0.00,0.00
 
-  Serial.println(x + del + y + del + z + del + temp + del + pressure + del + humidity + del + gas + del + altitude + del + latitude + del + longitude);
+// 000,906.89,1,31.96,90896.00,-4.38,0.00,17.88,-0.76,-2.99,9.29,0.00,0.00
+
+
+  Serial.println(String(hour) + String(minute) + String(second) + del + altitude + del + isFreeFall + del + temp + del + pressure + del + pitch + del + roll + del + heading + del + x_acc + del + y_acc + del + z_acc + del+ latitude + del + longitude);
   // Serial.println(output)
 }
